@@ -48,6 +48,7 @@ import matplotlib
 plt.imshow(x_train[0])
 #plt.show()
 
+#因为卷积层要求输入的input_shape=(28,28,1)，因此需要将输入数据增加一个维度，变成60000个(28,28,1)的数组
 x_train=x_train.reshape(x_train.shape[0],28,28,1)
 x_test=x_test.reshape(x_test.shape[0],28,28,1)
 
@@ -57,9 +58,14 @@ y_train=y_train.astype("float32")
 x_test=x_test.astype("float32")
 y_test=y_test.astype("float32")
 
+#将输入数组中的数据转换为0~1之间的数
+x_train /= 255
+y_train /= 255
+
 #y_train此时为一维数组
 print('y_train',y_train.shape)
 print(y_train[0:5])
+
 
 #将一维数组转换为分类问题，0→[1,0,0,0,0,0,0,0,0,0]  1→[0,1,0,0,0,0,0,0,0,0]依此类推
 y_train=np_utils.to_categorical(y_train,10)
@@ -73,35 +79,44 @@ print(y_train[0:5])
 #开始定义模型架构,首先声明一个顺序模型
 model=Sequential()
 
-#加入一个二维卷积层
-#卷积过滤器（卷积核）的数量:32
+#加入一个二维卷积层，1个7*7卷积核与三个3*3的效果是一样的，但是计算量相差很多，因此尽量选择小而深的卷积层
+#卷积过滤器（卷积核）的数量,一般取16的倍数:32
 #卷积内核的行数：3
 #卷积内核的列数：3
 #激活函数为'relu'，
 #当使用该层作为第一层时，应提供input_shape参数。例如input_shape = (128,128,3)代表128*128的彩色RGB图像
 model.add(Convolution2D(32,3,3,activation='relu',input_shape=(28,28,1)))
-print(model.output_shape)
+print('输出32个26*26的矩阵',model.output_shape)
 
 #再次加入一个二维卷积层
 model.add(Convolution2D(32,3,3,activation='relu'))
+print('输出32个24*24的矩阵',model.output_shape)
+#此处难以理解，不是应该输出32*32个24*24的矩阵吗？
 
 #加入一个2D池化层，MaxPooling2D 是一种减少模型参数数量的方式, 其通过在前一层上滑动一个 2*2 的滤波器, 再从这个 2*2 的滤波器的 4 个值中取最大值.
 #pool_size：整数或长为2的整数tuple，代表在两个方向（竖直，水平）上的下采样因子，如取（2，2）将使图片在两个维度上均变为原长的一半。
 model.add(MaxPooling2D(pool_size=(2,2)))
+print('输出32个12*12的矩阵',model.output_shape)
 
 #Dropout 层将在训练过程中每次更新参数时按一定概率（rate）随机断开输入神经元, 目的是防止过度拟合
 #控制需要断开的神经元的比例：25%
 model.add(Dropout(0.25))
+print('输出32个12*12的矩阵',model.output_shape)
 
 #Flatten层用来将输入“压平”，即把多维的输入一维化，常用在从卷积层到全连接层的过渡。
 model.add(Flatten())
+print('输出32*12*12的一维数组',model.output_shape)
 
 #全连接层,第一个参数是输出的大小. Keras 会自动处理层间连接.
 model.add(Dense(128,activation='relu'))
+print('输出128个数据的一维数组',model.output_shape)
 
 model.add(Dropout(0.5))
+print('输出128个数据的一维数组',model.output_shape)
 
-model.add(Dense(128,activation='softmax'))
+#此处的输出数据形状应该与y_train的形状一致，否则会报错
+model.add(Dense(10,activation='softmax'))
+print('输出10个数据的一维数组',model.output_shape)
 
 #编译模型时, 我们需要声明损失函数和优化器 (SGD, Adam 等等)
 #optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad
@@ -114,3 +129,14 @@ model.compile(loss='categorical_crossentropy',optimizer='adam',metrias=['accurac
 #nb_epochs：整数，训练的轮数，训练数据将会被遍历nb_epoch次。Keras中nb开头的变量均为”number of”的意思
 #verbose：日志显示，0为不在标准输出流输出日志信息，1为输出进度条记录，2为每个epoch输出一行记录
 model.fit(x_train,y_train,batch_size=32,nb_epoch=10,verbose=1)
+
+# 评估模型
+loss,accuracy = model.evaluate(x_test,y_test)
+print('\ntest loss',loss)
+print('accuracy',accuracy)
+
+# 保存模型
+model.save('model.h5')   # HDF5文件，pip install h5py
+
+#加载模型
+model = load_model('model.h5')
