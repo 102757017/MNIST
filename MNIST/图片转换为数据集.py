@@ -6,8 +6,9 @@ from PIL import Image
 
 f=open("list.txt","r")
 lines=f.read().split("\n")
-data_imgs=np.zeros((501,28,28), dtype=float)
-data_ans=np.zeros((501,1), dtype=float)
+#uint8格式只能表示0~255,占用存储空间和内存空间比较小
+data_imgs=np.zeros((501,28,28), dtype=np.uint8)
+data_ans=np.zeros((501,1), dtype=np.uint8)
 for index,line in enumerate(lines):
     
     file=line.split(" ")[0]
@@ -17,4 +18,4 @@ for index,line in enumerate(lines):
     data_imgs[index,:,:]=a
     data_ans[index,:]=char
 print(data_imgs.shape)
-np.savez('mydataset',data_imgs,data_ans)
+np.savez('mydataset',x_train=data_imgs,y_train=data_ans)
