@@ -1,25 +1,16 @@
 # coding: utf-8
-
 #!/usr/bin/python
-
 import numpy as np
-
-
-
+from keras.callbacks import TensorBoard
 #随机数种子不变的情况下，random.random()生成的随机数是不变的
 
-
 np.random.seed(123)
-
-from keras.models import Sequential
 
 from keras.layers import Dense #导入全连接神经层
 
 from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Activation #导入激活函数
-
-from keras.layers import Convolution2D #导入卷积层
+from keras.layers import Conv2D #导入卷积层
 
 from keras.layers import MaxPooling2D #导入池化层
 
@@ -27,17 +18,19 @@ from keras.layers import Flatten
 
 from keras.layers import Input #导入输入数据层
 
+from keras.layers import LeakyReLU #导入激活函数层
+
+from keras.layers import BatchNormalization #导入BN层
+
 from keras.models import Model #导入函数式模型
 
 from keras.utils import np_utils #数据预处理为0~1
 
-from keras.datasets import mnist #导入手写数据集
-
 from keras.models import load_model 
 
 from matplotlib import pyplot as plt
-
-from keras.callbacks import ReduceLROnPlateau #动态调整学习率
+from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
+from keras.callbacks import EarlyStopping
 import os
 
 f=np.load('mnist.npz')
@@ -86,36 +79,53 @@ print(y_train[0:5])
 
 #函数式模型
 inputs = Input(shape=(28,28,1))
-w1=Convolution2D(32,3,3,activation='relu')(inputs)
-w2=Convolution2D(32,3,3,activation='relu')(w1)
-w3=MaxPooling2D(pool_size=(2,2))(w2)
-w4=Dropout(0.25)(w3)
-w5=Flatten()(w4)
-w6=Dense(128,activation='relu')(w5)
-w7=Dropout(0.5)(w6)
-predictions=Dense(10,activation='softmax')(w7)
+#kernel_initializer：应该根据激活函数选择权重初始化方法，不合适的初始化方法会导致dead relu，会造成梯度消失，网络不收敛
+#未指定kernel_initializer的情况下，进行二次训练时权重不好复位，dead relu也不会恢复。
+#激活函数为tanh时使用Xavier初始化较好，激活函数为relu时，使用he_normal、he_uniform、MSRA较好
+x=Conv2D(32,(3,3),kernel_initializer='he_uniform')(inputs)
+
+#当深层网络难以收敛时，可以使用BN层加快收敛，使用BN层可以避免dead ReLU（使用relu运算速度较快），使用BN层时可以取消dropout层
+#x=BatchNormalization()(x)
+
+#激活函数使用LeakyReLU，当不激活时，LeakyReLU仍然会有非零输出值，使dead relu有复活的机会
+x=LeakyReLU(alpha=0.2)(x)
+x=Conv2D(32,(3,3),kernel_initializer='he_uniform')(x)
+#x=BatchNormalization()(x)
+x=LeakyReLU(alpha=0.2)(x)
+x=MaxPooling2D(pool_size=(2,2))(x)
+x=Dropout(0.25)(x)
+x=Flatten()(x)
+x=Dense(128,activation='relu',kernel_initializer='he_uniform')(x)
+x=Dropout(0.5)(x)
+predictions=Dense(10,activation='softmax')(x)
 
 model = Model(inputs=inputs, outputs=predictions)
 
 #编译模型时, 我们需要声明损失函数和优化器 (SGD, Adam 等等)
-#optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad
+#optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad、adam
 #loss：损失函数,该参数为模型试图最小化的目标函数，它可为预定义的损失函数名，如categorical_crossentropy、mse被叫做均方误差,MAE为绝对误差
 #metrics：指标列表,对分类问题，我们一般将该列表设置为metrics=['accuracy']
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 
 
-#学习率是每个batch权重往梯度方向下降的步距，学习率越高，loss下降越快，但是太高时会无法收敛到最优点（在附近打摆），keras默认的学习率是0.01
-#设置动态学习率，使用回调函数调用
-#monitor：被监测的量
-#factor：每次减少学习率的因子，学习率将以lr = lr*factor的形式被减少
-#patience：当patience个epoch过去而模型性能不提升时，学习率减少的动作会被触发
-#mode：‘auto’，‘min’，‘max’之一，在min模式下，如果检测值触发学习率减少。在max模式下，当检测值不再上升则触发学习率减少。
-reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.1,patience=3, mode='auto')
-
 
 filepath = "weights-improvement.hdf5"
 # 每个epoch确认确认monitor的值，如果训练效果提升, 则将权重保存, 每提升一次, 保存一次
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True,mode='max')
+#mode：‘auto’，‘min’，‘max’之一，在save_best_only=True时决定性能最佳模型的评判准则，例如，当监测值为val_acc时，模式应为max，当监测值为val_loss时，模式应为min。在auto模式下，评价准则由被监测值的名字自动推断。
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True,mode='auto')
+
+#如果val_loss相比上个epoch没有下降，则经过patience个epoch后停止训练
+early_stop=EarlyStopping(monitor='val_loss', verbose=0, patience=5,mode='auto')
+
+#TensorBoard的回调函数
+tb = TensorBoard(log_dir="./log",  # 日志文件保存位置
+                histogram_freq=1,  # 对于模型中各个层计算激活值和模型权重直方图的频率（训练轮数中）。 如果设置成 0 ，直方图不会被计算。对于直方图可视化的验证数据（或分离数据）一定要明确的指出。
+                batch_size=32,     # 用多大量的数据计算直方图
+                write_graph=False,    #是否在 TensorBoard 中可视化图像。 如果 write_graph 被设置为 True，日志文件会变得非常大。
+                write_grads=True,    # 是否在tensorboard中可视化梯度直方图
+                write_images=False,   # 是否在tensorboard中以图像形式可视化模型权重
+                update_freq='batch')   # 更新频率,batch或epoch
+
 
 #实现断点继续训练
 if os.path.exists(filepath):
@@ -130,7 +140,8 @@ if os.path.exists(filepath):
 #verbose：日志显示，0为不在标准输出流输出日志信息，1为输出进度条记录，2为每个epoch输出一行记录
 #回调函数为一个list,list中可有多个回调函数,回调函数以字典logs为参数,模型的.fit()中有下列参数会被记录到logs中：
 ##正确率和误差，acc和loss，如果指定了验证集，还会包含验证集正确率和误差val_acc和val_loss，val_acc还额外需要在.compile中启用metrics=['accuracy']。
-history =model.fit(x_train,y_train,batch_size=2000,epochs=1,verbose=1,callbacks=[reduce_lr,checkpoint])
+#validation_split：用作验证集的训练数据的比例。 模型将分出一部分不会被训练的验证数据
+history =model.fit(x_train,y_train,batch_size=1000,epochs=1,verbose=1,callbacks=[checkpoint,early_stop,tb],validation_split=0.1)
 #返回记录字典，包括每一次迭代的训练误差率和验证误差率
 
 

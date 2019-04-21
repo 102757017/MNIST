@@ -88,11 +88,11 @@ model=Sequential()
 #卷积内核的列数：3
 #激活函数为'relu'，
 #当使用该层作为第一层时，应提供input_shape参数。例如input_shape = (128,128,3)代表128*128的彩色RGB图像
-model.add(Conv2D(32,3,3,activation='relu',input_shape=(28,28,1)))
+model.add(Conv2D(32,(3,3),activation='relu',input_shape=(28,28,1)))
 print('输出32个26*26的矩阵',model.output_shape)
 
 #再次加入一个二维卷积层
-model.add(Conv2D(32,3,3,activation='relu'))
+model.add(Conv2D(32,(3,3),activation='relu'))
 print('输出32个24*24的矩阵',model.output_shape)
 #此处难以理解，不是应该输出32*32个24*24的矩阵吗？
 
@@ -126,6 +126,8 @@ print('输出10个数据的一维数组',model.output_shape)
 #编译模型时, 我们需要声明损失函数和优化器 (SGD, Adam 等等)
 #optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad
 #loss：损失函数,该参数为模型试图最小化的目标函数，它可为预定义的损失函数名，如categorical_crossentropy、mse被叫做均方误差,MAE为绝对误差
+#如果你的 targets 是 one-hot 编码，用 categorical_crossentropy  one-hot 编码：[0, 0, 1], [1, 0, 0], [0, 1, 0]
+#如果你的 tagets 是 数字编码 ，用 sparse_categorical_crossentropy  数字编码：2, 0, 1
 #metrics：指标列表,对分类问题，我们一般将该列表设置为metrics=['accuracy']
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 
@@ -141,7 +143,8 @@ reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.1,patience=3, mode='auto'
 
 filepath = "weights-improvement.hdf5"
 # 每个epoch确认确认monitor的值，如果训练效果提升, 则将权重保存, 每提升一次, 保存一次
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True,mode='max')
+#mode：‘auto’，‘min’，‘max’之一，在save_best_only=True时决定性能最佳模型的评判准则，例如，当监测值为val_acc时，模式应为max，当监测值为val_loss时，模式应为min。在auto模式下，评价准则由被监测值的名字自动推断。
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True,mode='auto')
 
 #实现断点继续训练
 if os.path.exists(filepath):
@@ -156,7 +159,8 @@ if os.path.exists(filepath):
 #verbose：日志显示，0为不在标准输出流输出日志信息，1为输出进度条记录，2为每个epoch输出一行记录
 #回调函数为一个list,list中可有多个回调函数,回调函数以字典logs为参数,模型的.fit()中有下列参数会被记录到logs中：
 ##正确率和误差，acc和loss，如果指定了验证集，还会包含验证集正确率和误差val_acc和val_loss，val_acc还额外需要在.compile中启用metrics=['accuracy']。
-history =model.fit(x_train,y_train,batch_size=2000,epochs=1,verbose=1,callbacks=[reduce_lr,checkpoint])
+#validation_split：用作验证集的训练数据的比例。 模型将分出一部分不会被训练的验证数据
+history =model.fit(x_train,y_train,batch_size=128,epochs=1,verbose=1,callbacks=[reduce_lr,checkpoint],validation_split=0.1)
 #返回记录字典，包括每一次迭代的训练误差率和验证误差率
 
 # 评估模型
