@@ -88,6 +88,7 @@ x=Conv2D(32,(3,3),kernel_initializer='he_uniform')(inputs)
 #x=BatchNormalization()(x)
 
 #激活函数使用LeakyReLU，当不激活时，LeakyReLU仍然会有非零输出值，使dead relu有复活的机会
+#分类问题对数据分布的变换不敏感，使用BN层效果较好，对于非分类问题要慎用BN，如GAN，由于改变了数据的分布，可能导致精度降低
 x=LeakyReLU(alpha=0.2)(x)
 x=Conv2D(32,(3,3),kernel_initializer='he_uniform')(x)
 #x=BatchNormalization()(x)
@@ -140,7 +141,7 @@ if os.path.exists(filepath):
 #verbose：日志显示，0为不在标准输出流输出日志信息，1为输出进度条记录，2为每个epoch输出一行记录
 #回调函数为一个list,list中可有多个回调函数,回调函数以字典logs为参数,模型的.fit()中有下列参数会被记录到logs中：
 ##正确率和误差，acc和loss，如果指定了验证集，还会包含验证集正确率和误差val_acc和val_loss，val_acc还额外需要在.compile中启用metrics=['accuracy']。
-#validation_split：用作验证集的训练数据的比例。 模型将分出一部分不会被训练的验证数据
+#validation_split：用作验证集的训练数据的比例。 模型将分出一部分不会被训练的验证数据，也可以直接指定validation_data=(x_val,y_val)
 history =model.fit(x_train,y_train,batch_size=1000,epochs=1,verbose=1,callbacks=[checkpoint,early_stop,tb],validation_split=0.1)
 #返回记录字典，包括每一次迭代的训练误差率和验证误差率
 
