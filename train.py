@@ -57,13 +57,10 @@ x_test=x_test.reshape(x_test.shape[0],28,28,1)
 
 #将数据转换为浮点数
 x_train=x_train.astype('float32')
-y_train=y_train.astype("float32")
 x_test=x_test.astype("float32")
-y_test=y_test.astype("float32")
 
 #将输入数组中的数据转换为0~1之间的数
 x_train /= 255
-y_train /= 255
 
 #y_train此时为一维数组
 print('y_train',y_train.shape)
@@ -188,4 +185,4 @@ model = load_model('model.h5')
 #使用predict时,必须设置batch_size,否则否则PCI总线之间的数据传输次数过多，性能会非常低下
 #不同的batch_size，得到的预测结果不一样，原因是因为batch normalize 时用的是被预测的x的均值，而每一批x的值是不一样的，所以结果会随batch_size的改变而改变
 #想要同一个图片的预测概率不变，只能不用batch_size
-y_predict=model.predict(x_test[0],batch_size=32,verbose=1)
+y_predict=model.predict(x_test[0:5],batch_size=32,verbose=1)

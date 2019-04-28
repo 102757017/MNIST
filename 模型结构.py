@@ -8,7 +8,7 @@ import os
 
 
 #给系统添加环境变量，修改的环境变量是临时改变的，当程序停止时修改的环境变量失效（系统变量不会改变）
-os.environ["Path"] += os.pathsep + r"G:\Program Files\WinPython-64bit-3.6.1.0Qt5\graphviz\bin"
+os.environ["Path"] += os.pathsep + r"D:\Program Files\WinPython-64bit-3.6.1.0Qt5\graphviz\bin"
 
 
 #加载模型
