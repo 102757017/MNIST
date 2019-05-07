@@ -99,7 +99,7 @@ def discriminator(inputs = Input(shape=(28,28,1))):
   x=LeakyReLU(alpha=0.2)(x)
   x=Dense(256)(x)
   x=LeakyReLU(alpha=0.2)(x)
-  x=Dense(2,activation='softmax')(x)
+  x=Dense(1,activation='sigmoid')(x)
   return x
 
 #输入为100维的随机数（0~1），输出为图片
@@ -119,7 +119,7 @@ def generator(inputs = Input(shape=(100,))):
 inputs = Input(shape=(28,28,1))
 output_d=discriminator(inputs)
 discriminator_model=Model(inputs=inputs, outputs=output_d)
-discriminator_model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+discriminator_model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
 plot_model(discriminator_model, to_file='discriminator.png',show_shapes=True)
 
 
@@ -134,7 +134,7 @@ generator_model=Model(inputs=inputs2, outputs=output_d2)
 #将discriminator_model的权重冻结
 discriminator_model.trainable=False
 #冻结权重后重新编译模型，冻结才能生效，因此前面的discriminator_model的权重是未冻结的，generator_model中使用到的generator_model的权重被冻结了
-generator_model.compile(loss='categorical_crossentropy',optimizer='adam')
+generator_model.compile(loss='binary_crossentropy',optimizer='adam')
 plot_model(generator_model, to_file='generator.png',show_shapes=True)
 
 #创建一个新model, 使得它的输出(outputs)是generator_model 中output_g的输出
@@ -151,19 +151,19 @@ for epoch in range(10000):
   noise = np.random.normal(0, 1, (128, 100))
   gen_imgs = model_mid.predict(noise)
   
-
-  #训练判别模型识别真实图片为真，因此标签全部为[1,0]
-  d_loss_real = discriminator_model.train_on_batch(imgs,np.tile(np.array([1,0]),(128,1)))
-  #训练判别模型识别生成的图片为假，因此标签全部为[0,1]
-  d_loss_fake = discriminator_model.train_on_batch(gen_imgs, np.tile(np.array([0,1]),(128,1)))
+  
+  #训练判别模型识别真实图片为真，因此标签全部为[1]
+  d_loss_real = discriminator_model.train_on_batch(imgs,np.ones((128, 1), dtype=float))
+  #训练判别模型识别生成的图片为假，因此标签全部为[0]
+  d_loss_fake = discriminator_model.train_on_batch(gen_imgs, np.zeros((128, 1), dtype=float))
   d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
-  print("d_loss:",d_loss_real,"d_loss_fake",d_loss_fake)
+  print("d_loss_real:",d_loss_real,"d_loss_fake",d_loss_fake)
   
 
   #训练生成模型
-  #判别模型的权重被冻结了，此时需要强迫判别模型将图片认定为真[1,0]，因此生成模型的权重被训练了以适应该要求。
+  #判别模型的权重被冻结了，此时需要强迫判别模型将图片认定为真[1]，因此生成模型的权重被训练了以适应该要求。
   noise = np.random.normal(0, 1, (128, 100))
-  g_loss = generator_model.train_on_batch(noise, np.tile(np.array([1,0]),(128,1)))
+  g_loss = generator_model.train_on_batch(noise, np.ones((128, 1), dtype=float))
   print("g_loss",g_loss)
   
   
