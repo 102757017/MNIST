@@ -36,6 +36,7 @@ import os
 from keras.utils import plot_model
 import pydot_ng as pydot
 import os
+from keras.optimizers import Adam
 
 (x_train,y_train), (x_test,y_test) = mnist.load_data()
 print('x_train',x_train.shape)
@@ -97,6 +98,7 @@ def discriminator(inputs = Input(shape=(28,28,1))):
   x=Flatten()(x)
   x=Dense(512)(x)
   x=LeakyReLU(alpha=0.2)(x)
+  x=Dropout(0.4)(x)
   x=Dense(256)(x)
   x=LeakyReLU(alpha=0.2)(x)
   x=Dense(1,activation='sigmoid')(x)
@@ -105,10 +107,17 @@ def discriminator(inputs = Input(shape=(28,28,1))):
 #输入为100维的随机数（0~1），输出为图片
 def generator(inputs = Input(shape=(100,))):
   x=inputs
-  for i in range(2):
-    x=Dense((i+1)*32)(x)
-    x=LeakyReLU(alpha=0.2)(x)
-    x=BatchNormalization()(x)
+  
+  x=Dense(256)(x)
+  x=LeakyReLU(alpha=0.2)(x)
+  x=BatchNormalization()(x)
+  x=Dense(512)(x)
+  x=LeakyReLU(alpha=0.2)(x)
+  x=BatchNormalization()(x)
+  x=Dense(1024)(x)
+  x=LeakyReLU(alpha=0.2)(x)
+  x=BatchNormalization()(x)
+  
   x=Dense(784,activation='tanh')(x)
   x=Reshape((28,28,1),name="gen_img")(x)
   return x
@@ -119,7 +128,8 @@ def generator(inputs = Input(shape=(100,))):
 inputs = Input(shape=(28,28,1))
 output_d=discriminator(inputs)
 discriminator_model=Model(inputs=inputs, outputs=output_d)
-discriminator_model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
+#必须设置Adam的参数，默认参数可能会跑飞
+discriminator_model.compile(loss='binary_crossentropy',optimizer=Adam(0.0002, 0.5),metrics=['accuracy'])
 plot_model(discriminator_model, to_file='discriminator.png',show_shapes=True)
 
 
@@ -134,7 +144,7 @@ generator_model=Model(inputs=inputs2, outputs=output_d2)
 #将discriminator_model的权重冻结
 discriminator_model.trainable=False
 #冻结权重后重新编译模型，冻结才能生效，因此前面的discriminator_model的权重是未冻结的，generator_model中使用到的generator_model的权重被冻结了
-generator_model.compile(loss='binary_crossentropy',optimizer='adam')
+generator_model.compile(loss='binary_crossentropy',optimizer=Adam(0.0002, 0.5))
 plot_model(generator_model, to_file='generator.png',show_shapes=True)
 
 #创建一个新model, 使得它的输出(outputs)是generator_model 中output_g的输出
