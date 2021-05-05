@@ -35,7 +35,6 @@ from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
 from keras.callbacks import EarlyStopping
 import os
 from keras.utils import plot_model
-import pydot_ng as pydot
 import os
 
 

@@ -33,7 +33,7 @@ from keras.callbacks import ReduceLROnPlateau #动态调整学习率
 
 from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
 import os
-
+from sklearn.decomposition import PCA
 
 f=np.load('mnist.npz')
 print(type(f),f)

@@ -34,7 +34,6 @@ from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
 from keras.callbacks import EarlyStopping
 import os
 from keras.utils import plot_model
-import pydot_ng as pydot
 import os
 from keras.optimizers import Adam
 
@@ -74,23 +73,6 @@ print('y_train',y_train.shape)
 print(y_train[0:5])
 
 
-#定义残差网络块
-def res_block(x,kernel_size):
-    #1*1的卷积用来降维/升维，strides=(2,2)的作用为改变shape，使其与pool后的shape一致
-    b_x=Conv2D(kernel_size,(1,1),strides=(2,2),kernel_initializer='he_uniform')(x)
-    
-    x=Conv2D(kernel_size,(3,3),padding="same",kernel_initializer='he_uniform')(x)
-    x=BatchNormalization()(x)
-    x=LeakyReLU(alpha=0.2)(x)
-    
-    x=Conv2D(kernel_size,(3,3),padding="same",kernel_initializer='he_uniform')(x)    
-    x=BatchNormalization()(x)
-     
-    x=MaxPooling2D(2,2)(x)
-    
-    x=Add()([b_x,x])
-    x=LeakyReLU(alpha=0.2)(x)
-    return x
 
 #输入为图片，输出为[0,1]，表示真假
 def discriminator(inputs = Input(shape=(28,28,1))): 

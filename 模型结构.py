@@ -3,7 +3,6 @@
 
 from keras.models import load_model 
 from keras.utils import plot_model
-import pydot_ng as pydot
 import os
 
 
@@ -16,6 +15,5 @@ model = load_model('model.h5')
 print(model.summary())
 
 
-#pydot.Dot.create(pydot.Dot())
 plot_model(model, to_file='模型结构.png',show_shapes=True)
 
