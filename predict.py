@@ -11,25 +11,25 @@ import numpy as np
 
 np.random.seed(123)
 
-from keras.models import Sequential
+from tensorflow.keras.models import Sequential
 
-from keras.layers import Dense #导入全连接神经层
+from tensorflow.keras.layers import Dense #导入全连接神经层
 
-from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
+from tensorflow.keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Activation #导入激活函数
+from tensorflow.keras.layers import Activation #导入激活函数
 
-from keras.layers import Convolution2D #导入卷积层
+from tensorflow.keras.layers import Convolution2D #导入卷积层
 
-from keras.layers import MaxPooling2D #导入池化层
+from tensorflow.keras.layers import MaxPooling2D #导入池化层
 
-from keras.layers import Flatten
+from tensorflow.keras.layers import Flatten
 
-from keras.utils import np_utils #数据预处理为0~1
+from tensorflow.keras.utils import to_categorical #数据预处理为0~1
 
-from keras.datasets import mnist #导入手写数据集
+from tensorflow.keras.datasets import mnist #导入手写数据集
 
-from keras.models import load_model 
+from tensorflow.keras.models import load_model 
 
 from matplotlib import pyplot as plt
 
@@ -69,8 +69,8 @@ print(y_train[0:5])
 
 
 #将一维数组转换为分类问题，0→[1,0,0,0,0,0,0,0,0,0]  1→[0,1,0,0,0,0,0,0,0,0]依此类推
-y_train=np_utils.to_categorical(y_train,10)
-y_test=np_utils.to_categorical(y_test,10)
+y_train=to_categorical(y_train,10)
+y_test=to_categorical(y_test,10)
 
 #y_train此时为二维数组
 print('y_train',y_train.shape)

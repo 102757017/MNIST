@@ -1,9 +1,10 @@
 # coding: utf-8
 #!/usr/bin/python
 import numpy as np
-from keras.models import load_model
-from keras.models import Model
+from tensorflow.keras.models import load_model
+from tensorflow.keras.models import Model
 from sklearn.decomposition import PCA
+import umap
 import datetime
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
@@ -29,7 +30,7 @@ x_train /= 255
 #加载模型
 model = load_model("model.h5")
 #删除最后1层
-model = Model(inputs=model.input, outputs=model.get_layer('dropout_2').output)
+model = Model(inputs=model.input, outputs=model.layers[-2].output)
 #预测结果，返回10个数据的一维数组，类型为浮点数，每个数表示结果为该类的概率
 #使用predict时,必须设置batch_size,否则否则PCI总线之间的数据传输次数过多，性能会非常低下
 #不同的batch_size，得到的预测结果不一样，原因是因为batch normalize 时用的是被预测的x的均值，而每一批x的值是不一样的，所以结果会随batch_size的改变而改变
@@ -40,12 +41,13 @@ print("y_predict.shape:",y_predict.shape)
 
 #PCA是线性降维方法，PCA缺省参数为None，所有特征被保留，此处降为3维
 t=datetime.datetime.now()
-X_pca = PCA(3).fit_transform(x_train.reshape(x_train.shape[0],-1))
-X_pca2 = PCA(3).fit_transform(y_predict)
+X_pca=umap.UMAP(n_components=3,min_dist=0.01,metric='correlation').fit_transform(x_train.reshape(x_train.shape[0],-1))
+X_pca2=umap.UMAP(n_components=3,min_dist=0.01,metric='correlation').fit_transform(y_predict)
+
 t2=datetime.datetime.now()-t
-print("PCA降维耗时:",t2)
-print("x_train PCA降维后:",X_pca.shape)
-print("y_predict PCA降维后:",X_pca2.shape)
+print("umap降维耗时:",t2)
+print("x_train umap降维后:",X_pca.shape)
+print("y_predict umap降维后:",X_pca2.shape)
 
 
 #子图1

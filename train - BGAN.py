@@ -15,43 +15,46 @@ Original file is located at
 
 
 import numpy as np
-from keras.callbacks import TensorBoard
-#from keras.datasets import mnist
-from keras.layers import Dense #导入全连接神经层
+from tensorflow.keras.callbacks import TensorBoard
+#from tensorflow.keras.datasets import mnist
+from tensorflow.keras.layers import Dense #导入全连接神经层
 
-from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
+from tensorflow.keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Conv2D #导入卷积层
+from tensorflow.keras.layers import Conv2D #导入卷积层
 
-from keras.layers import MaxPooling2D #导入池化层
+from tensorflow.keras.layers import MaxPooling2D #导入池化层
 
-from keras.layers import Flatten
+from tensorflow.keras.layers import Flatten
 
-from keras.layers import Input #导入输入数据层
+from tensorflow.keras.layers import Input #导入输入数据层
 
-from keras.layers import LeakyReLU #导入激活函数层
+from tensorflow.keras.layers import LeakyReLU #导入激活函数层
 
-from keras.layers import BatchNormalization #导入BN层
+from tensorflow.keras.layers import BatchNormalization #导入BN层
 
-from keras.layers import Reshape
+from tensorflow.keras.layers import Reshape
 
-from keras.layers import Add
+from tensorflow.keras.layers import Add
 
-from keras.models import Model #导入函数式模型
+from tensorflow.keras.models import Model #导入函数式模型
 
-from keras.utils import np_utils #数据预处理为0~1
+from tensorflow.keras.utils import to_categorical #数据预处理为0~1
 
-from keras.models import load_model 
+from tensorflow.keras.models import load_model 
 
 from matplotlib import pyplot as plt
-from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
-from keras.callbacks import EarlyStopping
-import os
-from keras.utils import plot_model
+from tensorflow.keras.callbacks import ModelCheckpoint #训练途中自动保存模型
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.utils import plot_model
 
 import os
-import keras.backend as K
-from keras.optimizers import Adam
+import tensorflow.keras.backend as K
+from tensorflow.keras.optimizers import Adam
+
+
+#给系统添加环境变量，修改的环境变量是临时改变的，当程序停止时修改的环境变量失效（系统变量不会改变）
+os.environ["Path"] += os.pathsep + r"D:\Program Files\WinPython-64bit-3.6.1.0Qt5\graphviz\bin"
 
 #(x_train,y_train), (x_test,y_test) = mnist.load_data()
 f=np.load('mnist.npz')
@@ -88,8 +91,8 @@ print(y_train[0:5])
 
 
 #将一维数组转换为分类问题，0→[1,0,0,0,0,0,0,0,0,0]  1→[0,1,0,0,0,0,0,0,0,0]依此类推
-y_train=np_utils.to_categorical(y_train,10)
-y_test=np_utils.to_categorical(y_test,10)
+y_train=to_categorical(y_train,10)
+y_test=to_categorical(y_test,10)
 
 #y_train此时为二维数组
 print('y_train',y_train.shape)
@@ -194,7 +197,7 @@ for epoch in range(10000):
         axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
         axs[i,j].axis('off')
         cnt += 1
-      fig.savefig("images/%d.png" % epoch)
+      fig.savefig("images/{}.png".format(epoch))
       plt.close()
   
   #每200epoch保存一次生成器生成的图片

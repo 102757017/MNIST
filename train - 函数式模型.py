@@ -6,31 +6,31 @@ from keras.callbacks import TensorBoard
 
 np.random.seed(123)
 
-from keras.layers import Dense #导入全连接神经层
+from tensorflow.keras.layers import Dense #导入全连接神经层
 
-from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
+from tensorflow.keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Conv2D #导入卷积层
+from tensorflow.keras.layers import Conv2D #导入卷积层
 
-from keras.layers import MaxPooling2D #导入池化层
+from tensorflow.keras.layers import MaxPooling2D #导入池化层
 
-from keras.layers import Flatten
+from tensorflow.keras.layers import Flatten
 
-from keras.layers import Input #导入输入数据层
+from tensorflow.keras.layers import Input #导入输入数据层
 
-from keras.layers import LeakyReLU #导入激活函数层
+from tensorflow.keras.layers import LeakyReLU #导入激活函数层
 
-from keras.layers import BatchNormalization #导入BN层
+from tensorflow.keras.layers import BatchNormalization #导入BN层
 
-from keras.models import Model #导入函数式模型
+from tensorflow.keras.models import Model #导入函数式模型
 
-from keras.utils import np_utils #数据预处理为0~1
+from tensorflow.keras.utils import to_categorical #数据预处理为0~1
 
-from keras.models import load_model 
+from tensorflow.keras.models import load_model 
 
 from matplotlib import pyplot as plt
-from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
-from keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint #训练途中自动保存模型
+from tensorflow.keras.callbacks import EarlyStopping
 import os
 
 f=np.load('mnist.npz')
@@ -66,8 +66,8 @@ print(y_train[0:5])
 
 
 #将一维数组转换为分类问题，0→[1,0,0,0,0,0,0,0,0,0]  1→[0,1,0,0,0,0,0,0,0,0]依此类推
-y_train=np_utils.to_categorical(y_train,10)
-y_test=np_utils.to_categorical(y_test,10)
+y_train=to_categorical(y_train,10)
+y_test=to_categorical(y_test,10)
 
 #y_train此时为二维数组
 print('y_train',y_train.shape)
@@ -99,11 +99,12 @@ predictions=Dense(10,activation='softmax')(x)
 
 model = Model(inputs=inputs, outputs=predictions)
 
-#编译模型时, 我们需要声明损失函数和优化器 (SGD, Adam 等等)
+#编译模型时, 我们需要声明损失函数和优化器 (SGD, Nadam 等等).
+#Nadam是基于动量的优化方法，收敛速度较快，并且可以使用动态学习率，但是可能无法收敛到最优解。SGD是固定的学习率，收敛速度非常慢，但是效果要好一些。训练时可以先用adam初步训练，再用sgd精细训练。
 #optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad、adam
 #loss：损失函数,该参数为模型试图最小化的目标函数，它可为预定义的损失函数名，如categorical_crossentropy、mse被叫做均方误差,MAE为绝对误差
 #metrics：指标列表,对分类问题，我们一般将该列表设置为metrics=['accuracy']
-model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy',optimizer='Nadam',metrics=['accuracy'])
 
 
 
@@ -157,7 +158,7 @@ print('accuracy',accuracy)
 #绘图
 #acc是准确率，适合于分类问题。对于回归问题，返回的准确率为0
 plt.plot(history.history['loss'], label='train_loss')
-plt.plot(history.history['acc'], label='train_acc')
+plt.plot(history.history['accuracy'], label='train_acc')
 leg = plt.legend(loc='best', ncol=2, mode="expand", shadow=True, fancybox=True)
 leg.get_frame().set_alpha(0.5)
 plt.show()

@@ -1,36 +1,34 @@
 # coding: utf-8
 #!/usr/bin/python
 import numpy as np
-from keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import TensorBoard
 #随机数种子不变的情况下，random.random()生成的随机数是不变的
 
 np.random.seed(123)
 
-from keras.layers import Dense #导入全连接神经层
+from tensorflow.keras.layers import Dense #导入全连接神经层
 
-from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
+from tensorflow.keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Conv2D #导入卷积层
+from tensorflow.keras.layers import Conv2D #导入卷积层
 
-from keras.layers import MaxPooling2D #导入池化层
+from tensorflow.keras.layers import MaxPooling2D #导入池化层
 
-from keras.layers import Flatten
+from tensorflow.keras.layers import Flatten
 
-from keras.layers import Input #导入输入数据层
+from tensorflow.keras.layers import Input #导入输入数据层
 
-from keras.layers import LeakyReLU #导入激活函数层
+from tensorflow.keras.layers import LeakyReLU #导入激活函数层
 
-from keras.layers import BatchNormalization #导入BN层
+from tensorflow.keras.layers import BatchNormalization #导入BN层
 
-from keras.models import Model #导入函数式模型
+from tensorflow.keras.models import Model #导入函数式模型
 
-from keras.utils import np_utils #数据预处理为0~1
-
-from keras.models import load_model 
+from tensorflow.keras.models import load_model 
 
 from matplotlib import pyplot as plt
-from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
-from keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint #训练途中自动保存模型
+from tensorflow.keras.callbacks import EarlyStopping
 import os
 
 f=np.load('mnist.npz')

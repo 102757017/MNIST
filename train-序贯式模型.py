@@ -7,33 +7,36 @@ import numpy as np
 #随机数种子不变的情况下，random.random()生成的随机数是不变的
 np.random.seed(123)
 
-from keras.models import Sequential
+from tensorflow.keras.models import Sequential
 
-from keras.layers import Dense #导入全连接神经层
+from tensorflow.keras.layers import Dense #导入全连接神经层
 
-from keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
+from tensorflow.keras.layers import Dropout #导入正则化，Dropout将在训练过程中每次更新参数时按一定概率(rate)随机断开输入神经元
 
-from keras.layers import Activation #导入激活函数
+from tensorflow.keras.layers import Activation #导入激活函数
 
-from keras.layers import Conv2D #导入卷积层
+from tensorflow.keras.layers import Conv2D #导入卷积层
 
-from keras.layers import MaxPooling2D #导入池化层
+from tensorflow.keras.layers import MaxPooling2D #导入池化层
 
-from keras.layers import Flatten
+from tensorflow.keras.layers import Flatten
 
-from keras.utils import np_utils #数据预处理为0~1
+from tensorflow.keras.utils import to_categorical #数据预处理为0~1
 
-from keras.datasets import mnist #导入手写数据集
+from tensorflow.keras.datasets import mnist #导入手写数据集
 
-from keras.models import load_model 
+from tensorflow.keras.models import load_model 
 
 from matplotlib import pyplot as plt
 
-from keras.callbacks import ReduceLROnPlateau #动态调整学习率
+from tensorflow.keras.callbacks import ReduceLROnPlateau #动态调整学习率
 
-from keras.callbacks import ModelCheckpoint #训练途中自动保存模型
+from tensorflow.keras.callbacks import ModelCheckpoint #训练途中自动保存模型
 import os
 from sklearn.decomposition import PCA
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import TensorBoard
+
 
 f=np.load('mnist.npz')
 print(type(f),f)
@@ -68,8 +71,8 @@ print(y_train[0:5])
 
 
 #将一维数组转换为分类问题，0→[1,0,0,0,0,0,0,0,0,0]  1→[0,1,0,0,0,0,0,0,0,0]依此类推
-y_train=np_utils.to_categorical(y_train,10)
-y_test=np_utils.to_categorical(y_test,10)
+y_train=to_categorical(y_train,10)
+y_test=to_categorical(y_test,10)
 
 #y_train此时为二维数组
 print('y_train',y_train.shape)
@@ -120,13 +123,14 @@ print('输出10个数据的一维数组',model.output_shape)
 
 
 
-#编译模型时, 我们需要声明损失函数和优化器 (SGD, Adam 等等)
+#编译模型时, 我们需要声明损失函数和优化器 (SGD, Nadam 等等).
+#Nadam是基于动量的优化方法，收敛速度较快，并且可以使用动态学习率，但是可能无法收敛到最优解。SGD是固定的学习率，收敛速度非常慢，但是效果要好一些。训练时可以先用adam初步训练，再用sgd精细训练。
 #optimizer：优化器，该参数可指定为已预定义的优化器名，如rmsprop、adagrad
 #loss：损失函数,该参数为模型试图最小化的目标函数，它可为预定义的损失函数名，如categorical_crossentropy、mse被叫做均方误差,MAE为绝对误差
 #如果你的 targets 是 one-hot 编码，用 categorical_crossentropy  one-hot 编码：[0, 0, 1], [1, 0, 0], [0, 1, 0]
 #如果你的 tagets 是 数字编码 ，用 sparse_categorical_crossentropy  数字编码：2, 0, 1
 #metrics：指标列表,对分类问题，我们一般将该列表设置为metrics=['accuracy']
-model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy',optimizer='Nadam',metrics=['accuracy'])
 
 
 #学习率是每个batch权重往梯度方向下降的步距，学习率越高，loss下降越快，但是太高时会无法收敛到最优点（在附近打摆），keras默认的学习率是0.01
@@ -143,6 +147,19 @@ filepath = "weights-improvement.hdf5"
 #mode：‘auto’，‘min’，‘max’之一，在save_best_only=True时决定性能最佳模型的评判准则，例如，当监测值为val_acc时，模式应为max，当监测值为val_loss时，模式应为min。在auto模式下，评价准则由被监测值的名字自动推断。
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True,mode='auto')
 
+#如果val_loss相比上个epoch没有下降，则经过patience个epoch后停止训练
+early_stop=EarlyStopping(monitor='val_loss', verbose=0, patience=5,mode='auto')
+
+#TensorBoard的回调函数
+tb = TensorBoard(log_dir="./log",  # 日志文件保存位置
+                histogram_freq=1,  # 对于模型中各个层计算激活值和模型权重直方图的频率（训练轮数中）。 如果设置成 0 ，直方图不会被计算。对于直方图可视化的验证数据（或分离数据）一定要明确的指出。
+                batch_size=32,     # 用多大量的数据计算直方图
+                write_graph=True,    #是否在 TensorBoard 中可视化图像。 如果 write_graph 被设置为 True，日志文件会变得非常大。
+                write_grads=True,    # 是否在tensorboard中可视化梯度直方图
+                write_images=False,   # 是否在tensorboard中以图像形式可视化模型权重
+                update_freq='batch')   # 更新频率,batch或epoch
+
+
 #实现断点继续训练
 if os.path.exists(filepath):
     model.load_weights(filepath)
@@ -157,7 +174,7 @@ if os.path.exists(filepath):
 #回调函数为一个list,list中可有多个回调函数,回调函数以字典logs为参数,模型的.fit()中有下列参数会被记录到logs中：
 ##正确率和误差，acc和loss，如果指定了验证集，还会包含验证集正确率和误差val_acc和val_loss，val_acc还额外需要在.compile中启用metrics=['accuracy']。
 #validation_split：用作验证集的训练数据的比例。 模型将分出一部分不会被训练的验证数据
-history =model.fit(x_train,y_train,batch_size=128,epochs=1,verbose=1,callbacks=[reduce_lr,checkpoint],validation_split=0.1)
+history =model.fit(x_train,y_train,batch_size=128,epochs=2,verbose=1,callbacks=[reduce_lr,checkpoint,early_stop,tb],validation_split=0.1)
 #返回记录字典，包括每一次迭代的训练误差率和验证误差率
 
 # 评估模型
@@ -173,7 +190,7 @@ model.save('model.h5')   # HDF5文件，pip install h5py
 #绘图
 #acc是准确率，适合于分类问题。对于回归问题，返回的准确率为0
 plt.plot(history.history['loss'], label='train_loss')
-plt.plot(history.history['acc'], label='train_acc')
+plt.plot(history.history['accuracy'], label='train_acc')
 leg = plt.legend(loc='best', ncol=2, mode="expand", shadow=True, fancybox=True)
 leg.get_frame().set_alpha(0.5)
 plt.show()
